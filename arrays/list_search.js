@@ -7,10 +7,15 @@ const listaDeAlunosEMedias = [alunos, medias];
 
 function searchStudent(studentName){
 	if(listaDeAlunosEMedias[0].includes(studentName)){
-		console.log(`${studentName} esta cadastrado!`);
+
+		const indice = listaDeAlunosEMedias[0].indexOf(studentName);
+
+		const mediaStudent = listaDeAlunosEMedias[1][indice];
+
+		console.log(`${studentName} tem a média ${mediaStudent}.`);
 	}else {
 		console.log("Aluno não encontrado!");
 	}
 }	
 
-searchStudent(João);
+searchStudent("João");
