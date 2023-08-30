@@ -1,0 +1,197 @@
+https://oieduardorabelo.medium.com/javascript-for-vs-foreach-vs-for-in-vs-for-of-44b8beffbfa0
+
+Neste artigo, iremos ver as diferenças entre iterar em uma array com as 4 construções primárias de loop:
+
+for (let i = 0; i < arr.length; ++i)
+arr.forEach((v, i) => { /* ... */ })
+for (let i in arr)
+for (const v of arr)
+Iremos ver uma visão geral da diferença entre essas construções de looping usando vários casos diferentes. Também veremos as regras ESLint relevantes que você pode usar para impor as melhores práticas de loop em seus projetos.
+
+Visão geral da sintaxe
+As construções for e for..in fornecem acesso ao índice do array, não ao elemento real. Por exemplo, suponha que você queira mostrar os valores armazenados no array abaixo:
+
+const arr = ['a', 'b', 'c'];
+Com for e for..in, você precisa usar arr[i]:
+
+for (let i = 0; i < arr.length; ++i) {
+  console.log(arr[i]);
+}
+
+for (let i in arr) {
+  console.log(arr[i]);
+}
+Com as outras duas construções, forEach() e for..of, você tem acesso ao próprio elemento do array. Com forEach() você pode acessar o índice do array em i, com for..of você não pode.
+
+arr.forEach((v, i) => console.log(v));
+
+for (const v of arr) {
+  console.log(v);
+}
+Propriedades não numéricas
+Arrays em JavaScript são objetos. Isso significa que você pode adicionar propriedades de string ao seu array, não apenas números.
+
+const arr = ['a', 'b', 'c'];
+
+typeof arr; // 'object'
+
+// Adicionando uma propriedade não numérica
+arr.test = 'bad';
+
+arr.test; // 'abc'
+arr[1] === arr['1']; // `true`, arrays em JavaScript são apenas um tipo especial de "object"
+3 das 4 construções em loop ignoram a propriedade não numérica. No entanto, for..in irá realizar o loop nelas:
+
+const arr = ['a', 'b', 'c'];
+arr.test = 'bad';
+
+// Irá mostar "a, b, c, bad"
+for (let i in arr) {
+  console.log(arr[i]);
+}
+É por isso que percorrer um array usando for..in, geralmente, é uma prática ruim. As outras construções de loop ignoram corretamente a chave não numérica:
+
+const arr = ['a', 'b', 'c'];
+arr.test = 'abc';
+
+// Mostra "a, b, c"
+for (let i = 0; i < arr.length; ++i) {
+  console.log(arr[i]);
+}
+
+// Mostra "a, b, c"
+arr.forEach((el, i) => console.log(i, el));
+
+// Mostra "a, b, c"
+for (const el of arr) {
+  console.log(el);
+}
+Lição aprendida: Evite usar for..in em um array, a menos que tenha certeza de que pretende fazer uma iteração sobre chaves não numéricas e chaves herdadas. Use a regra guard-for-in do ESLint para não permitir o uso de for..in.
+
+Elementos vazios
+Arrays em JavaScript permitem elementos vazios. O array abaixo é sintaticamente válido:
+
+const arr = ['a',, 'c'];
+
+arr.length; // 3
+O que torna as coisas ainda mais confusas é que as construções em loop tratam ['a',, 'c'] diferentemente de ['a', undefined, 'c']. Abaixo está um exemplo de como as 4 construções de looping lidam com ['a',, 'c'] e seu elemento vazio. for..in e forEach pulam o elemento vazio, for e for..of não:
+
+// Mostra "a, undefined, c"
+for (let i = 0; i < arr.length; ++i) {
+  console.log(arr[i]);
+}
+
+// Mostra "a, c"
+arr.forEach(v => console.log(v));
+
+// Mostra "a, c"
+for (let i in arr) {
+  console.log(arr[i]);
+}
+
+// Mostra "a, undefined, c"
+for (const v of arr) {
+  console.log(v);
+}
+Caso você esteja se perguntando, todas as 4 construções mostram "a, undefined, c" com ['a', undefined, 'c'].
+
+Existe outra maneira de adicionar um elemento vazio a um array:
+
+// Equivalente: `['a', 'b', 'c',, 'e']`
+const arr = ['a', 'b', 'c'];
+arr[5] = 'e';
+forEach() e for..in pulam elementos vazios do array for e for..of não. O comportamento do forEach() pode causar problemas, no entanto, buracos em arrays do JavaScript são geralmente raros porque não são suportados no JSON:
+
+$ node
+> JSON.parse('{"arr":["a","b","c"]}')
+{ arr: [ 'a', 'b', 'c' ] }
+> JSON.parse('{"arr":["a",null,"c"]}')
+{ arr: [ 'a', null, 'c' ] }
+> JSON.parse('{"arr":["a",,"c"]}')
+SyntaxError: Unexpected token , in JSON at position 12
+Assim, você não precisa se preocupar com falhas nos dados do usuário, a menos que conceda aos usuários acesso ao tempo de execução completo do JavaScript.
+
+Lição aprendida: for..in e forEach() pulam elementos vazios, também conhecidos como "buracos", no array. Raramente há qualquer razão para tratar buracos como um caso especial, ao invés de tratar o índice como tendo valor undefined. Se esse comportamento especial com "buracos" lhe causa preocupação, abaixo está um arquivo .eslintrc.yml com exemplo de como não permite a chamada forEach():
+
+parserOptions:
+  ecmaVersion: 2018
+rules:
+  no-restricted-syntax:
+    - error
+    - selector: CallExpression[callee.property.name="forEach"]
+      message: Do not use `forEach()`, use `for/of` instead
+Contexto de Função
+O contexto de funções é uma maneira sofisticada de dizer ao o que this se refere. for, for..in e for..of irá reter o valor do escopo externo this, mas o retorno de forEach() será um this diferente, ao menos que você use uma função de seta.
+
+'use strict';
+
+const arr = ['a'];
+
+// Mostra "undefined"
+arr.forEach(function() {
+  console.log(this);
+});
+Lição aprendida: Use as funções de seta com forEach(). Use a regra no-arrow-callback do ESLint para exigir funções de seta para todos os retornos de chamada que não usam this.
+
+Async/Await e Generators
+Outra caso do forEach() é que ele não funciona bem com async/await ou Generators. Se o retorno do seu forEach() for síncrono, não teremos problema, porém, não podemos usar await em um retorno de forEach():
+
+async function run() {
+  const arr = ['a', 'b', 'c'];
+  arr.forEach(el => {
+    // SyntaxError
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    console.log(el);
+  });
+}
+Você não pode usar yield:
+
+function* run() {
+  const arr = ['a', 'b', 'c'];
+  arr.forEach(el => {
+    // SyntaxError
+    yield new Promise(resolve => setTimeout(resolve, 1000));
+    console.log(el);
+  });
+}
+Os exemplos acima funcionam bem com for..of:
+
+async function asyncFn() {
+  const arr = ['a', 'b', 'c'];
+  for (const el of arr) {
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    console.log(el);
+  }
+}
+
+function* generatorFn() {
+  const arr = ['a', 'b', 'c'];
+  for (const el of arr) {
+    yield new Promise(resolve => setTimeout(resolve, 1000));
+    console.log(el);
+  }
+}
+Mesmo marcando o retorno de forEach() como async, você terá uma dor de cabeça substancial ao tentar executar seu async forEach() em série e pausar sua função assíncrona. Por exemplo, o script abaixo irá imprimir 0-9 na ordem inversa:
+
+async function print(n) {
+  // Espera 1 segundo antes de mostrar 0, 0.9 segundos antes de mostrar 1, etc.
+  await new Promise(resolve => setTimeout(() => resolve(), 1000 - n * 100));
+  // Normalmente irá mostrar 9, 8, 7, 6...1, 0 masa ordem não é garantida
+  console.log(n);
+}
+
+async function test() {
+  [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].forEach(print);
+}
+
+test();
+Lição aprendida: Se você estiver usando async/await ou Generators, lembre-se que forEach() é um açúcar sintático. E como o açúcar, deve ser usado com parcimônia e não para tudo.
+
+Conclusões
+Geralmente, for..of é a maneira mais robusta de iterar em um array em JavaScript. É mais conciso que um for loop convencional e não tem tantos casos extremos como for..in e forEach(). A principal desvantagem de for..of é que você precisa fazer um trabalho extra para acessar o índice (1)‌, e você não pode encadear funções como você pode fazer em forEach(). forEach() vem com várias advertências e deve ser usado com moderação, mas há vários exemplos em que ele torna o código mais conciso.
+
+(1) Para acessar o índice de um array em um loop for..of, você pode usar a função Array#entries():
+
+for (const [i, v] of arr.entries()) {
+  console.log(i, v); // Mostra "0 a", "1 b", "2 c"
+}
