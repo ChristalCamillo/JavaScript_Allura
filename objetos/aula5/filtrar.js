@@ -1,0 +1,16 @@
+// tentando filtrar clientes que moram em apto mas nao colocaram complemento
+
+const clientes = require("./clientes.json");
+
+function filtrarApartamentoSemComplemento(clientes) {
+  return clientes.filter((cliente) => {
+    return (
+      cliente.endereco.apartamento &&
+      !cliente.endereco.hasOwnProperty("complemento")
+    );
+  });
+}
+
+const filtrados = filtrarApartamentoSemComplemento(clientes);
+
+console.log(filtrados);
