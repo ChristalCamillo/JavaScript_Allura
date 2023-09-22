@@ -1,8 +1,9 @@
 // esse algoritmo é bom pra usar com listas pequenas, caso não ele perde pois é demorado e não preserva a ordem dos itens
 // o menor valor vai ser colocado no inicio
-const livros = require('./listaLivros');
+const livros = require('../aula1/listaLivros');
 const menorValor = require('../aula1/menorValor');
-const troca = require('../aula3_insertionSort/troca')
+const selectionTroca = require('../aula3_insertionSort/troca');
+const troca = require('../aula3_insertionSort/troca');
 
 //for simples pra percorrer o array 
 // for (let atual = 0; atual < livros.length - 1; atual++) {
@@ -20,10 +21,21 @@ const troca = require('../aula3_insertionSort/troca')
 // }
 
 //usando o FOREACH
-livros.forEach((_, indice) => {
- let menor = menorValor(livros, indice)
+// livros.forEach((_, atual) => {
+//  let menor = menorValor(livros, atual);
 
-troca(livros, menor);
-})
+//   let livroAtual = livros[atual];
+//   let livroMenorPreco = livros[menor];
 
-console.log(livros)
+//   livros[atual] = livroMenorPreco
+//   livros[menor] = livroAtual
+// })
+
+for (let atual = 0; atual < livros.length; atual++) {
+    let menor = menorValor(livros, atual);
+
+    selectionTroca(livros, atual, menor);
+
+}
+
+console.log(livros);
