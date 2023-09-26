@@ -1,4 +1,4 @@
-const livros = require('../aula1/listaLivros');
+const livros = require('../listaLivros');
 
 livros.sort(function(x, y){
 	let a = x.titulo.toUpperCase(),
