@@ -1,5 +1,6 @@
 const listaLivros = require('./array');
 const trocaLugar = require('./encontraMenores');
+//na média, o quickSort faz menos trocas então acaba mais performatico que o mergeSort
 
 function quickSort(array, esquerda, direita) {
   if (array.length > 1) {
